@@ -7,13 +7,13 @@ SKIP_TAGS="_null encrypted"
 additional_roles () {
 
 read -p "
-Do you want to enable VPN Always-On when connected to cellular networks?
+Do you want to enable VPN On Demand when connected to cellular networks?
 [y/N]: " -r OnDemandEnabled_Cellular
 OnDemandEnabled_Cellular=${OnDemandEnabled_Cellular:-n}
 if [[ "$OnDemandEnabled_Cellular" =~ ^(y|Y)$ ]]; then EXTRA_VARS+=" OnDemandEnabled_Cellular=Y"; fi
 
 read -p "
-Do you want to enable VPN Always-On when connected to Wi-Fi?
+Do you want to enable VPN On Demand when connected to Wi-Fi?
 [y/N]: " -r OnDemandEnabled_WIFI
 OnDemandEnabled_WIFI=${OnDemandEnabled_WIFI:-n}
 if [[ "$OnDemandEnabled_WIFI" =~ ^(y|Y)$ ]]; then EXTRA_VARS+=" OnDemandEnabled_WIFI=Y"; fi
@@ -39,7 +39,7 @@ ssh_tunneling_enabled=${ssh_tunneling_enabled:-n}
 if [[ "$ssh_tunneling_enabled" =~ ^(y|Y)$ ]]; then ROLES+=" ssh_tunneling"; fi
 
 read -p "
-Do you want to apply operating system security enhancements on the server?
+Do you want to apply operating system security enhancements on the server? (warning: replaces your sshd_config)
 [y/N]: " -r security_enabled
 security_enabled=${security_enabled:-n}
 if [[ "$security_enabled" =~ ^(y|Y)$ ]]; then ROLES+=" security"; fi
@@ -66,28 +66,27 @@ deploy () {
 
 azure () {
   read -p "
-Enter your azure secret (https://docs.ansible.com/ansible/guide_azure.html#authenticating-with-azure)
+Enter your azure secret id (https://github.com/trailofbits/algo/blob/master/docs/AZURE.md)
 You can skip this step if you want to use your defaults credentials from ~/.azure/credentials
 [...]: " -rs azure_secret
 
   read -p "
 
-Enter your azure tenant (https://docs.ansible.com/ansible/guide_azure.html#authenticating-with-azure)
+Enter your azure tenant id (https://github.com/trailofbits/algo/blob/master/docs/AZURE.md)
 You can skip this step if you want to use your defaults credentials from ~/.azure/credentials
 [...]: " -rs azure_tenant
 
   read -p "
 
-Enter your azure client_id (https://docs.ansible.com/ansible/guide_azure.html#authenticating-with-azure)
+Enter your azure client id (application id) (https://github.com/trailofbits/algo/blob/master/docs/AZURE.md)
 You can skip this step if you want to use your defaults credentials from ~/.azure/credentials
 [...]: " -rs azure_client_id
 
   read -p "
 
-Enter your azure subscription_id (https://docs.ansible.com/ansible/guide_azure.html#authenticating-with-azure)
+Enter your azure subscription id (https://github.com/trailofbits/algo/blob/master/docs/AZURE.md)
 You can skip this step if you want to use your defaults credentials from ~/.azure/credentials
 [...]: " -rs azure_subscription_id
-
 
   read -p "
 Name the vpn server:
@@ -293,21 +292,29 @@ Please choose the number of your zone. Press enter for default (#8) zone.
 
 non_cloud () {
   read -p "
-Enter IP address of your server: (use localhost for local installation)
+Enter the IP address of your server: (or use localhost for local installation)
 : " -r server_ip
 
   read -p "
-What user should we use to login on the server? (ignore if you're deploying to localhost)
+What user should we use to login on the server? (note: passwordless login required, or ignore if you're deploying to localhost)
 [root]: " -r server_user
   server_user=${server_user:-root}
 
   read -p "
 Enter the public IP address of your server: (IMPORTANT! This IP is used to verify the certificate)
-: " -r IP_subject
+[$server_ip]: " -r IP_subject
+  IP_subject=${IP_subject:-$server_ip}
 
   ROLES="local vpn"
   EXTRA_VARS="server_ip=$server_ip server_user=$server_user IP_subject_alt_name=$IP_subject"
   SKIP_TAGS+=" cloud update-alternatives"
+
+  read -p "
+Was this server deployed by Algo previously?
+[y/N]: " -r Deployed_By_Algo
+Deployed_By_Algo=${Deployed_By_Algo:-n}
+if [[ "$Deployed_By_Algo" =~ ^(y|Y)$ ]]; then EXTRA_VARS+=" Deployed_By_Algo=Y"; fi
+
 }
 
 algo_provisioning () {
@@ -340,11 +347,11 @@ Enter the number of your desired provider
 user_management () {
 
   read -p "
-Enter IP address of your server: (use localhost for local installation)
+Enter the IP address of your server: (or use localhost for local installation)
 : " -r server_ip
 
   read -p "
-What user should we use to login on the server? (ignore if you're deploying to localhost)
+What user should we use to login on the server? (note: passwordless login required, or ignore if you're deploying to localhost)
 [root]: " -r server_user
   server_user=${server_user:-root}
 
